@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Upload</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007BFF;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            margin-top: 30px;
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .error {
+            color: #e74c3c;
+        }
+        .success {
+            color: #2ecc71;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        .table th {
+            background-color: #f1f1f1;
+            font-weight: bold;
+        }
+        .list-group {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .list-group ul {
+            padding-left: 20px;
+        }
+        .list-group ul li {
+            margin-bottom: 8px;
+        }
+        .response {
+            margin-top: 20px;
+            text-align: left;
+        }
+    
+        /* List group styles */
+        .list-group {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        .list-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+    
+        /* Styling for each rejected user */
+        .rejected-user {
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+    
+        .rejected-user strong {
+            color: #007bff;
+        }
+    
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    
+        /* Hover effect for each rejected user */
+        .rejected-user:hover {
+            background-color: #f1f1f1;
+            border-color: #ccc;
+        }
+    
+        /* Styling for success message */
+        .success {
+            color: green;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        
+        .table th {
+            background-color: #f2f2f2;
+        }
+        
+        .table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .table tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload CSV File</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="csvFile" name="file" accept=".csv" required />
+            <br>
+            <button type="submit">Upload</button>
+        </form>
+
+        <div class="response" id="response"></div>
+
+        <!-- Existing Users Table -->
+        <h2>Users</h2>
+        <table class="table" id="existingUsersTable">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in existing_users %}
+                    <tr>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.age }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const responseDiv = document.getElementById('response');
+        const existingUsersTable = document.getElementById('existingUsersTable').getElementsByTagName('tbody')[0];
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                responseDiv.innerHTML = `<p class="error">Please select a file.</p>`;
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/Api/upload-csv', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken') // CSRF token
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    responseDiv.innerHTML = `
+                        <p class="success">Upload Successful!</p>
+                        <p><strong>Valid Records:</strong> ${result.valid_records}</p>
+                        <p><strong>Rejected Records:</strong> ${result.rejected_records}</p>
+                        <div class="list-group">
+                            <p class="list-title">Rejected Users:</p>
+                            <div>
+                                ${result.errors.map(error => {
+                                    // Clean up error message and display it in a better format
+                                    const errorMessage = Object.values(error.error).flat().join(', '); // Join multiple error messages if any
+                                    return `
+                                        <div class="rejected-user">
+                                            <strong>Email:</strong> ${error.email} <br>
+                                            <div class="error-message"><strong>Error:</strong> ${errorMessage}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+
+                    // Add saved users to the existing users table
+                    // result.saved_users.forEach(user => {
+                    //     const row = existingUsersTable.insertRow();
+                    //     const cell = row.insertCell(0);
+                    //     cell.textContent = user;
+                    // });
+                    result.saved_users.forEach(user => {
+                    const row = existingUsersTable.insertRow();
+
+                    // Insert cells for email, name, and age
+                    const emailCell = row.insertCell(0);
+                    const nameCell = row.insertCell(1);
+                    const ageCell = row.insertCell(2);
+
+                    // Populate the cells with user data
+                    emailCell.textContent = user.email;
+                    nameCell.textContent = user.name;
+                    ageCell.textContent = user.age;
+                });
+                } else {
+                    responseDiv.innerHTML = `<p class="error">Error: ${result.error || 'Something went wrong.'}</p>`;
+                }
+            } catch (err) {
+                responseDiv.innerHTML = `<p class="error">Error: ${err.message}</p>`;
+            }
+        });
+
+        // Function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
