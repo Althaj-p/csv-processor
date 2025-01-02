@@ -9,13 +9,9 @@ from rest_framework import status
 
 # Django View for rendering the HTML template
 def home(request):
-    # Fetch existing users from the database
     existing_users = User.objects.all()
 
-    # Render the template and pass the existing users to the context
-    return render(request, 'index.html', {
-        'existing_users': existing_users
-    })
+    return render(request, 'index.html',locals())
 
 # DRF API View for handling CSV upload
 class CSVUploadAPIView(APIView):
